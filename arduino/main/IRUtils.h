@@ -20,66 +20,35 @@ code storeCode(decode_results *results) {
 
   lastCode.type = results->decode_type;
   int count = results->rawlen;
-  if (lastCode.type == UNKNOWN) {
-    Serial.println("Received unknown code, saving as raw");
-    lastCode.len = results->rawlen - 1;
-    // To store raw codes:
-    // Drop first value (gap)
-    // Convert from ticks to microseconds
-    // Tweak marks shorter, and spaces longer to cancel out IR receiver distortion
-    for (int i = 1; i <= lastCode.len; i++) {
-      if (i % 2) {
-        // Mark
-        lastCode.durations[i - 1] = results->rawbuf[i]*USECPERTICK - MARK_EXCESS;
-        Serial.print(" m");
-      } 
-      else {
-        // Space
-        lastCode.durations[i - 1] = results->rawbuf[i]*USECPERTICK + MARK_EXCESS;
-        Serial.print(" s");
-      }
-      Serial.print(lastCode.durations[i - 1], DEC);
-    }
-    Serial.println("");
-  }
-  else {
-    if (lastCode.type == NEC) {
-      Serial.print("Received NEC: ");
-      if (results->value == REPEAT) {
-        // Don't record a NEC repeat value as that's useless.
-        Serial.println("repeat; ignoring.");
-        return;
-      }
-    } 
-    else if (lastCode.type == SONY) {
-      Serial.print("Received SONY: ");
-    } 
-    else if (lastCode.type == PANASONIC) {
-      Serial.print("Received PANASONIC: ");
-    }
-    else if (lastCode.type == JVC) {
-      Serial.print("Received JVC: ");
-    }
-    else if (lastCode.type == RC5) {
-      Serial.print("Received RC5: ");
-    } 
-    else if (lastCode.type == RC6) {
-      Serial.print("Received RC6: ");
+  Serial.println("Received unknown code, saving as raw");
+  lastCode.len = results->rawlen - 1;
+  // To store raw codes:
+  // Drop first value (gap)
+  // Convert from ticks to microseconds
+  // Tweak marks shorter, and spaces longer to cancel out IR receiver distortion
+  for (int i = 1; i <= lastCode.len; i++) {
+    if (i % 2) {
+      // Mark
+      lastCode.durations[i - 1] = results->rawbuf[i]*USECPERTICK - MARK_EXCESS;
+      Serial.print(" m");
     } 
     else {
-      Serial.print("Unexpected codeType ");
-      Serial.print(lastCode.type, DEC);
-      Serial.println("");
+      // Space
+      lastCode.durations[i - 1] = results->rawbuf[i]*USECPERTICK + MARK_EXCESS;
+      Serial.print(" s");
     }
-    Serial.println(results->value, HEX);
-    lastCode.value = results->value;
-    lastCode.len = results->bits;
+    Serial.print(lastCode.durations[i - 1], DEC);
   }
+  Serial.println("");
+  Serial.println(results->value, HEX);
+  lastCode.value = results->value;
+  lastCode.len = results->bits;
 
   return lastCode;
 }
 
 void sendCode(IRsend irsend, code lastCode, int repeat) {
+  Serial.println("Il valore e' ");
   if (lastCode.type == NEC) {
     if (repeat) {
       irsend.sendNEC(REPEAT, lastCode.len);
